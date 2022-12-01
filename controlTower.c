@@ -204,7 +204,7 @@ void *planeUpdate(void *arg)
 			currNode->data->x += currNode->data->speed;
 			currNode->data->y -= currNode->data->speed;
 
-			if( currNode->data->x > MAXX ||  currNode->data->y == 0){
+			if( currNode->data->x >= MAXX ||  currNode->data->y <= 0){
 			   currNode->data->landed = 1;
 			   planeAboutToLand = 1;
 			   pthread_cond_broadcast(&cond);
