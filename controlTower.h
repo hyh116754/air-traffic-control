@@ -35,7 +35,6 @@ void cleanup(NodeType*);
 void *planeUpdate(void *arg);
 void *planeCollisionCheck(void *arg);
 void *planeAssignment(void *arg);
-void printPlaneInfo();
 
 
 
