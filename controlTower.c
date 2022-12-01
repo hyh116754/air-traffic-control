@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
 	for(i = 0; i< NUMPLANES; ++i){
 		airplanes[i].id = i;
 		airplanes[i].x=5;
-		airplanes[i].y=10;
+		airplanes[i].y=2;
 		airplanes[i].speed=1;
 		airplanes[i].landed = 0;
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 	pthread_create(&thread2, &attr, planeCollisionCheck, NULL);
 
 
-
+	sleep(6);
 	pthread_attr_destroy(&attr);
 	void *ret;
 	pthread_join(thread0,&ret);
@@ -88,14 +88,21 @@ void printPlaneInfo() {
 
 void *planeUpdate(void *arg)
 {
-	//pass in information to print about the plane
-	int i;
-	for(i = 0; i< NUMPLANES; ++i){
-			airplanes[i].id = i;
-			airplanes[i].x+=airplanes[i].speed;
-			airplanes[i].y+=airplanes[i].speed;
-			printf("%*s%s\n", airplanes[i].x, "", "x");
+	while(1){
+		//pass in information to print about the plane
+			int i;
+			for(i = 0; i< NUMPLANES; ++i){
+					airplanes[i].id = i;
+					airplanes[i].x+=airplanes[i].speed;
+					airplanes[i].y+=airplanes[i].speed;
+					printf("%*s%s\n", airplanes[i].x, "", "x");
+			}
+
+			printf("running the update func\n");
+
+			sleep(3);
 	}
+
 	return (NULL);
 
 }
