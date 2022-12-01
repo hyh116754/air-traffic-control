@@ -11,11 +11,14 @@
 #include <sys/neutrino.h>
 #include <pthread.h>
 #include <sched.h>
+#include <stdlib.h>
+
 
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 volatile int planeAboutToLand; //indicator that plane needs to be assigned
+NodeType *planeList = NULL;
 
 //main declares some threads and assigns them some function for the plane to fly in.
 int main(int argc, char *argv[]) {
@@ -26,17 +29,23 @@ int main(int argc, char *argv[]) {
 	pthread_t thread2;
 	pthread_attr_t attr;
 
+	NodeType *newNode;
+	NodeType *currNode;
+	airplane *newAirplane;
 
 	//creating array of airplane objects
 	int i;
 	for(i = 0; i< NUMPLANES; ++i){
-		airplanes[i].id = i;
+
+		/*airplanes[i].id = i;
 		airplanes[i].x=0;
 		airplanes[i].y=5;
 		airplanes[i].speed=1;
-		airplanes[i].landed = 0;
-
+		airplanes[i].landed = 0;*/
+		initPlane(i,0,5,1,0,&newAirplane);
+		addPlane(&planeList,newAirplane,i);
 	}
+	printList(planeList);
 	planeAboutToLand = 0;
 
 	pthread_attr_init(&attr);
@@ -69,6 +78,91 @@ int main(int argc, char *argv[]) {
 
 	return 0;
 }
+
+//dynamic memory allocation for a plane object
+void initPlane(int id ,int x,int y,int speed,int landed,airplane **plane)
+{
+  *plane = malloc(sizeof(airplane));
+  (*plane)->id = id;
+  (*plane)->x = x;
+  (*plane)->y = y;
+  (*plane)->speed = speed;
+  (*plane)->landed = landed;
+}
+
+//linked list memory deallocation
+void cleanup(NodeType *listHead)
+{
+  NodeType *currNode;
+  NodeType *nextNode;
+  currNode = listHead;
+  while (currNode != NULL) {
+    nextNode = currNode->next;
+    free(currNode->data);
+    free(currNode);
+    currNode = nextNode;
+  }
+}
+
+void addPlane(NodeType **listHead, airplane *plane, int pos)
+{
+  NodeType *currNode;
+  NodeType *prevNode;
+  NodeType *newNode;
+  int currPos = 0;
+
+  currNode = *listHead;
+  prevNode = NULL;
+
+  while (currNode != NULL) {
+    if (currPos == pos)
+      break;
+    ++currPos;
+    prevNode = currNode;
+    currNode = currNode->next;
+  }
+
+  if (currPos != pos) {
+    printf("Error:  invalid position\n");
+    free(plane);
+    return;
+  }
+
+  newNode = malloc(sizeof(NodeType));
+  newNode->data = plane;
+  newNode->prev = NULL;
+  newNode->next = NULL;
+
+  if (prevNode == NULL)
+    *listHead = newNode;
+  else
+    prevNode->next = newNode;
+
+  newNode->next = currNode;
+
+  newNode->prev = prevNode;
+
+  if (currNode != NULL)
+    currNode->prev = newNode;
+}
+
+void printList(NodeType *listHead)
+{
+  NodeType *currNode = listHead;
+  while (currNode != NULL) {
+    printPlane(currNode->data);
+    currNode = currNode->next;
+  }
+
+}
+
+void printPlane(const airplane *plane)
+{
+  printf("Plane:  id%d, x: %d y:%d \n",plane->id,plane->x,plane->y);
+}
+
+
+
 
 void printPlaneInfo() {
 	int i;
