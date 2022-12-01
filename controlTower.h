@@ -1,6 +1,7 @@
 #define NUMPLANES      10
 #define MAXX      8
-
+#define C_OK      0
+#define C_NOK    -1
 
 typedef struct{
 	int id;
@@ -21,9 +22,11 @@ typedef struct Node {
 airplane airplanes[10];
 
 
+//functions for linked list
 void initPlane(int,int,int,int,int,airplane**);
 void addPlane(NodeType**, airplane*, int);
-int  deletePlane(NodeType**, char*);
+int deletePlane(NodeType **listHead, int id);
+int  deletePlane(NodeType**, int);
 void printList(NodeType*);
 void printPlane(const airplane*);
 void cleanup(NodeType*);
