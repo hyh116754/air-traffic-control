@@ -71,8 +71,8 @@ void printPlaneInfo() {
 	struct sched_param param;
 	int policy;
 
-	//sleep for 20 seconds
-	sleep(20);
+	//sleep for 2 seconds
+	sleep(2);
 
 	pid_t tid = gettid();
 	pthread_getschedparam (tid, &policy, &param);
@@ -89,24 +89,20 @@ void printPlaneInfo() {
 void *planeUpdate(void *arg)
 {
 	//pass in information to print about the plane
-	printPlaneInfo();
-	return (NULL);
-
+	int i;
 	for(i = 0; i< NUMPLANES; ++i){
 			airplanes[i].id = i;
 			airplanes[i].x+=airplanes[i].speed;
 			airplanes[i].y+=airplanes[i].speed;
-			
-			if(airplanes[i].x - airplanes[i].speed  == || y)
-			airplanes[i].landed = 0;
-
+			printf("%*s%s\n", airplanes[i].x, "", "x");
 	}
+	return (NULL);
+
 }
 
 void *planeCollisionCheck(void *arg)
 {
 	//pass in information to print about the plane
-	printPlaneInfo();
 	return (NULL);
 }
 
