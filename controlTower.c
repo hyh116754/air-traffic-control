@@ -28,9 +28,6 @@ int main(int argc, char *argv[]) {
 	pthread_t thread1;
 	pthread_t thread2;
 	pthread_attr_t attr;
-
-	NodeType *newNode;
-	NodeType *currNode;
 	airplane *newAirplane;
 
 	//creating array of airplane objects
@@ -76,6 +73,7 @@ int main(int argc, char *argv[]) {
 	pthread_join(thread1,&ret);
 	pthread_join(thread2,&ret);
 
+	cleanup(planeList);
 	return 0;
 }
 
@@ -146,6 +144,44 @@ void addPlane(NodeType **listHead, airplane *plane, int pos)
     currNode->prev = newNode;
 }
 
+
+
+int deletePlane(NodeType **listHead, int id)
+{
+  NodeType *currNode;
+  NodeType *prevNode;
+
+  currNode = *listHead;
+  prevNode = NULL;
+
+  while (currNode != NULL) {
+    if (currNode->data->id == id)
+      break;
+
+    prevNode = currNode;
+    currNode = currNode->next;
+  }
+
+  if (currNode == NULL) {
+    return C_NOK;
+  }
+
+  if (prevNode == NULL)
+    *listHead = currNode->next;
+  else
+    prevNode->next = currNode->next;
+
+  if (currNode->next != NULL)
+    currNode->next->prev = prevNode;
+
+  free(currNode->data);
+  free(currNode);
+
+  return C_OK;
+
+}
+
+
 void printList(NodeType *listHead)
 {
   NodeType *currNode = listHead;
@@ -180,19 +216,22 @@ void *planeUpdate(void *arg)
 		//pass in information to print about the plane
 		int i;
 		pthread_mutex_lock(&mutex);
-		for(i = 0; i< NUMPLANES; ++i){
-			airplanes[i].x+=airplanes[i].speed;
-			airplanes[i].y-=airplanes[i].speed;
-			if(airplanes[i].x > MAXX ||  airplanes[i].y == 0){
-						airplanes[i].landed = 1;
-						planeAboutToLand = 1;
-						pthread_cond_broadcast(&cond);
-						printf("plane is landing...\n");
+		NodeType *currNode;
+		currNode = planeList;
+		while(currNode != NULL){
+			currNode->data->x += currNode->data->speed;
+			currNode->data->y -= currNode->data->speed;
+			currNode = currNode->next;
+
+			if( currNode->data->x > MAXX ||  currNode->data->y == 0){
+			   currNode->data->landed = 1;
+			   planeAboutToLand = 1;
+			   pthread_cond_broadcast(&cond);
+			   printf("plane is landing...\n");
 			}
 		}
 
 
-		printPlaneInfo();
 		pthread_mutex_unlock(&mutex);
 		sleep(3);
 	}
@@ -220,12 +259,28 @@ void *planeAssignment(void *arg)
 		printf("doing assignment work...\n");
 		int i;
 		pthread_mutex_lock(&mutex);
-		//doing work for assignment of landing gate
-		for(i = 0; i< NUMPLANES; ++i){
-			if(airplanes[i].landed == 1){
+
+		//need to find the airplane in the current "in air" list and remove it
+		//TODO: after we add it to a gate list
+
+		int ret;
+		NodeType *currNode;
+	    currNode = planeList;
+	    while(currNode != NULL){
+
+	    	if(currNode->data->landed == 1){
 				printf("Found the plane to land...\n");
-			}
-		}
+
+	    		ret = deletePlane(&planeList,currNode->data->id);
+				if(ret < 0)
+					printf("error deleting plane..\n");
+				else
+					printf("deleted plane from list\n");
+	    	}
+
+	    	currNode = currNode->next;
+
+	    }
 
 		planeAboutToLand = 0;
 		pthread_cond_broadcast(&cond);
