@@ -12,34 +12,28 @@
 #include <pthread.h>
 #include <sched.h>
 #include <stdlib.h>
-
+#include <time.h>
 
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 volatile int planeAboutToLand; //indicator that plane needs to be assigned
-NodeType *planeList = NULL;
+NodeType *planeList;
 
 //main declares some threads and assigns them some function for the plane to fly in.
 int main(int argc, char *argv[]) {
 
-
+	srand(time(NULL));
 	pthread_t thread0;
 	pthread_t thread1;
 	pthread_t thread2;
 	pthread_attr_t attr;
 	airplane *newAirplane;
 
-	//creating array of airplane objects
+	//creating linked list of airplane objects
 	int i;
 	for(i = 0; i< NUMPLANES; ++i){
-
-		/*airplanes[i].id = i;
-		airplanes[i].x=0;
-		airplanes[i].y=5;
-		airplanes[i].speed=1;
-		airplanes[i].landed = 0;*/
-		initPlane(i,0,5,1,0,&newAirplane);
+		initPlane(i,0,(rand() % 10)+2,(rand() % 5)+1,0,&newAirplane);
 		addPlane(&planeList,newAirplane,i);
 	}
 	printList(planeList);
@@ -194,34 +188,21 @@ void printList(NodeType *listHead)
 
 void printPlane(const airplane *plane)
 {
-  printf("Plane:  id%d, x: %d y:%d \n",plane->id,plane->x,plane->y);
+  printf("Plane:  id%d, x: %d y:%d speed:%d\n",plane->id,plane->x,plane->y,plane->speed);
 }
-
-
-
-
-void printPlaneInfo() {
-	int i;
-	for(i = 0; i< NUMPLANES; ++i){
-		printf("%*s%s\n", airplanes[i].x, "", "x");
-	}
-
-}
-
 
 
 void *planeUpdate(void *arg)
 {
 	while(1){
 		//pass in information to print about the plane
-		int i;
 		pthread_mutex_lock(&mutex);
 		NodeType *currNode;
 		currNode = planeList;
+
 		while(currNode != NULL){
 			currNode->data->x += currNode->data->speed;
 			currNode->data->y -= currNode->data->speed;
-			currNode = currNode->next;
 
 			if( currNode->data->x > MAXX ||  currNode->data->y == 0){
 			   currNode->data->landed = 1;
@@ -229,6 +210,8 @@ void *planeUpdate(void *arg)
 			   pthread_cond_broadcast(&cond);
 			   printf("plane is landing...\n");
 			}
+
+			currNode = currNode->next;
 		}
 
 
@@ -275,12 +258,14 @@ void *planeAssignment(void *arg)
 				if(ret < 0)
 					printf("error deleting plane..\n");
 				else
-					printf("deleted plane from list\n");
+					printf("deleted plane from list\n");\
+				break;
 	    	}
 
-	    	currNode = currNode->next;
 
+	    	currNode = currNode->next;
 	    }
+	    printList(planeList);
 
 		planeAboutToLand = 0;
 		pthread_cond_broadcast(&cond);
