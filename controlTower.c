@@ -13,6 +13,10 @@
 #include <sched.h>
 
 
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
+volatile int planeAboutToLand; //indicator that plane needs to be assigned
+
 //main declares some threads and assigns them some function for the plane to fly in.
 int main(int argc, char *argv[]) {
 
@@ -27,12 +31,13 @@ int main(int argc, char *argv[]) {
 	int i;
 	for(i = 0; i< NUMPLANES; ++i){
 		airplanes[i].id = i;
-		airplanes[i].x=5;
-		airplanes[i].y=2;
+		airplanes[i].x=0;
+		airplanes[i].y=5;
 		airplanes[i].speed=1;
 		airplanes[i].landed = 0;
 
 	}
+	planeAboutToLand = 0;
 
 	pthread_attr_init(&attr);
 	pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
@@ -55,7 +60,6 @@ int main(int argc, char *argv[]) {
 	pthread_attr_setschedparam(&attr, &schedparam);
 	pthread_create(&thread2, &attr, planeCollisionCheck, NULL);
 
-
 	sleep(6);
 	pthread_attr_destroy(&attr);
 	void *ret;
@@ -67,20 +71,10 @@ int main(int argc, char *argv[]) {
 }
 
 void printPlaneInfo() {
-	//needed structs for get sched param
-	struct sched_param param;
-	int policy;
-
-	//sleep for 2 seconds
-	sleep(2);
-
-	pid_t tid = gettid();
-	pthread_getschedparam (tid, &policy, &param);
-
-
-	int priority = param.sched_priority;
-	printf("The plane id is: %d and the thread priority is: %d \n",tid,priority);
-	printf("Plane location is at:...");
+	int i;
+	for(i = 0; i< NUMPLANES; ++i){
+		printf("%*s%s\n", airplanes[i].x, "", "x");
+	}
 
 }
 
@@ -90,17 +84,23 @@ void *planeUpdate(void *arg)
 {
 	while(1){
 		//pass in information to print about the plane
-			int i;
-			for(i = 0; i< NUMPLANES; ++i){
-					airplanes[i].id = i;
-					airplanes[i].x+=airplanes[i].speed;
-					airplanes[i].y+=airplanes[i].speed;
-					printf("%*s%s\n", airplanes[i].x, "", "x");
+		int i;
+		pthread_mutex_lock(&mutex);
+		for(i = 0; i< NUMPLANES; ++i){
+			airplanes[i].x+=airplanes[i].speed;
+			airplanes[i].y-=airplanes[i].speed;
+			if(airplanes[i].x > MAXX ||  airplanes[i].y == 0){
+						airplanes[i].landed = 1;
+						planeAboutToLand = 1;
+						pthread_cond_broadcast(&cond);
+						printf("plane is landing...\n");
 			}
+		}
 
-			printf("running the update func\n");
 
-			sleep(3);
+		printPlaneInfo();
+		pthread_mutex_unlock(&mutex);
+		sleep(3);
 	}
 
 	return (NULL);
@@ -117,6 +117,27 @@ void *planeCollisionCheck(void *arg)
 
 void *planeAssignment(void *arg)
 {
+	while(1){
+		pthread_mutex_lock(&mutex);
+		while (planeAboutToLand != 1)
+		{
+			pthread_cond_wait(&cond, &mutex);
+		}
+		printf("doing assignment work...\n");
+		int i;
+		pthread_mutex_lock(&mutex);
+		//doing work for assignment of landing gate
+		for(i = 0; i< NUMPLANES; ++i){
+			if(airplanes[i].landed == 1){
+				printf("Found the plane to land...\n");
+			}
+		}
+
+		planeAboutToLand = 0;
+		pthread_cond_broadcast(&cond);
+		pthread_mutex_unlock(&mutex);
+
+	}
 	return (NULL);
 }
 
