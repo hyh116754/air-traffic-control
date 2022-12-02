@@ -1,5 +1,5 @@
 /*
- * planeThreads.cpp
+ * controlTower.cpp
  *
  *  Created on: Nov. 8, 2022
  *      Author: michael
@@ -258,6 +258,7 @@ void *planeAssignment(void *arg)
 		//TODO: after we add it to a gate list
 
 		int ret;
+		int res;
 		NodeType *currNode;
 	    currNode = planeList;
 	    while(currNode != NULL){
@@ -267,7 +268,8 @@ void *planeAssignment(void *arg)
 
 	    		ret = deletePlane(&planeList,currNode->data->id);
 			   //send the plane to the server
-				int ret = MsgSend(server_coid, &currNode->data, sizeof(currNode->data), &checksum, sizeof(checksum));
+				res = MsgSend(server_coid, currNode->data, sizeof(currNode->data), &checksum, sizeof(checksum));
+				printf("Received checksum %d \n",checksum);
 
 				if(ret < 0)
 					printf("error deleting plane..\n");
@@ -275,7 +277,6 @@ void *planeAssignment(void *arg)
 					printf("deleted plane from list\n");\
 				break;
 	    	}
-
 
 	    	currNode = currNode->next;
 	    }
