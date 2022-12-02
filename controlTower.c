@@ -13,15 +13,25 @@
 #include <sched.h>
 #include <stdlib.h>
 #include <time.h>
-
+#include <sys/iofunc.h>
+#include <sys/dispatch.h>
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 volatile int planeAboutToLand; //indicator that plane needs to be assigned
 NodeType *planeList;
+int server_coid;
+int checksum;
 
 //main declares some threads and assigns them some function for the plane to fly in.
 int main(int argc, char *argv[]) {
+
+
+	//establish a connection to the server's channel
+	if ((server_coid = name_open("controlSystem", 0)) == -1) {
+			return EXIT_FAILURE;
+	}
+
 
 	srand(time(NULL));
 	pthread_t thread0;
@@ -68,6 +78,7 @@ int main(int argc, char *argv[]) {
 	pthread_join(thread2,&ret);
 
 	cleanup(planeList);
+	name_close(server_coid);
 	return 0;
 }
 
@@ -240,10 +251,10 @@ void *planeAssignment(void *arg)
 			pthread_cond_wait(&cond, &mutex);
 		}
 		printf("doing assignment work...\n");
-		int i;
 		pthread_mutex_lock(&mutex);
 
-		//need to find the airplane in the current "in air" list and remove it
+		//we are finding the airplane in the current "in air" list which has landed and remove it from air list
+		//we need to pass it over server communication to our gate somehow
 		//TODO: after we add it to a gate list
 
 		int ret;
@@ -255,6 +266,9 @@ void *planeAssignment(void *arg)
 				printf("Found the plane to land...\n");
 
 	    		ret = deletePlane(&planeList,currNode->data->id);
+			   //send the plane to the server
+				int ret = MsgSend(server_coid, &currNode->data, sizeof(currNode->data), &checksum, sizeof(checksum));
+
 				if(ret < 0)
 					printf("error deleting plane..\n");
 				else
@@ -266,6 +280,8 @@ void *planeAssignment(void *arg)
 	    	currNode = currNode->next;
 	    }
 	    printList(planeList);
+
+
 
 		planeAboutToLand = 0;
 		pthread_cond_broadcast(&cond);
