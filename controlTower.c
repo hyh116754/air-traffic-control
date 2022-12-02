@@ -225,7 +225,7 @@ void *planeUpdate(void *arg)
 
 void *planeCollisionCheck(void *arg)
 {
-	//pass in information to print about the plane
+	//TODO: ensure plane collision doesn't happen through speed changes
 	return (NULL);
 }
 
