@@ -16,6 +16,8 @@
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
 
+#include "util.h"
+
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
 volatile int planeAboutToLand; //indicator that plane needs to be assigned
@@ -93,116 +95,15 @@ void initPlane(int id ,int x,int y,int speed,int landed,airplane **plane)
   (*plane)->landed = landed;
 }
 
-//linked list memory deallocation
-void cleanup(NodeType *listHead)
-{
-  NodeType *currNode;
-  NodeType *nextNode;
-  currNode = listHead;
-  while (currNode != NULL) {
-    nextNode = currNode->next;
-    free(currNode->data);
-    free(currNode);
-    currNode = nextNode;
-  }
-}
-
-void addPlane(NodeType **listHead, airplane *plane, int pos)
-{
-  NodeType *currNode;
-  NodeType *prevNode;
-  NodeType *newNode;
-  int currPos = 0;
-
-  currNode = *listHead;
-  prevNode = NULL;
-
-  while (currNode != NULL) {
-    if (currPos == pos)
-      break;
-    ++currPos;
-    prevNode = currNode;
-    currNode = currNode->next;
-  }
-
-  if (currPos != pos) {
-    printf("Error:  invalid position\n");
-    free(plane);
-    return;
-  }
-
-  newNode = malloc(sizeof(NodeType));
-  newNode->data = plane;
-  newNode->prev = NULL;
-  newNode->next = NULL;
-
-  if (prevNode == NULL)
-    *listHead = newNode;
-  else
-    prevNode->next = newNode;
-
-  newNode->next = currNode;
-
-  newNode->prev = prevNode;
-
-  if (currNode != NULL)
-    currNode->prev = newNode;
-}
-
-
-
-int deletePlane(NodeType **listHead, int id)
-{
-  NodeType *currNode;
-  NodeType *prevNode;
-
-  currNode = *listHead;
-  prevNode = NULL;
-
-  while (currNode != NULL) {
-    if (currNode->data->id == id)
-      break;
-
-    prevNode = currNode;
-    currNode = currNode->next;
-  }
-
-  if (currNode == NULL) {
-    return C_NOK;
-  }
-
-  if (prevNode == NULL)
-    *listHead = currNode->next;
-  else
-    prevNode->next = currNode->next;
-
-  if (currNode->next != NULL)
-    currNode->next->prev = prevNode;
-
-  free(currNode->data);
-  free(currNode);
-
-  return C_OK;
-
-}
-
-
-void printList(NodeType *listHead)
-{
-  NodeType *currNode = listHead;
-  while (currNode != NULL) {
-    printPlane(currNode->data);
-    currNode = currNode->next;
-  }
-
-}
 
 void printPlane(const airplane *plane)
 {
   printf("Plane:  id%d, x: %d y:%d speed:%d\n",plane->id,plane->x,plane->y,plane->speed);
 }
 
-
+/**
+ * this function will send updated plane info to server as msg
+ */
 void *planeUpdate(void *arg)
 {
 	while(1){
@@ -224,8 +125,6 @@ void *planeUpdate(void *arg)
 
 			currNode = currNode->next;
 		}
-
-
 		pthread_mutex_unlock(&mutex);
 		sleep(3);
 	}
@@ -234,6 +133,11 @@ void *planeUpdate(void *arg)
 
 }
 
+
+/**
+ * this function will send a pulse to server asking for check
+ * if find collision, will update server
+ */
 void *planeCollisionCheck(void *arg)
 {
 	//TODO: ensure plane collision doesn't happen through speed changes
@@ -241,7 +145,9 @@ void *planeCollisionCheck(void *arg)
 }
 
 
-
+/**
+ * this function will send plane info to server as msg
+ */
 void *planeAssignment(void *arg)
 {
 	while(1){

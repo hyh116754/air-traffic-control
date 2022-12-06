@@ -1,5 +1,9 @@
-#include "server.h"
-#include "controlTower.h"
+/**
+ * controlTowerServer.c
+ *
+ * Server in the control tower for communication.
+ *
+ */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -7,29 +11,24 @@
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
 
+#include "controlTowerServer.h"
+#include "airplaneClient.h"
+#include "gateManager.h"
 
 
 #define MAX_STRING_LEN    256
-#define ATTACH_POINT "controlSystem"
-int calculate_checksum(airplane *plane);
+
 
 int main(void) {
 
-	typedef union
-	{
-		struct _pulse pulse;
-		airplane plane;
-	} myMessage_t;
-
 	name_attach_t *attach;
 	myMessage_t msg;
-    int rcvid;
+    int rcvid, status, checksum;
 
 	//creating a channel
    if ((attach = name_attach(NULL, ATTACH_POINT, 0)) == NULL) {
 	   return EXIT_FAILURE;
    }
-
 
 	while(1)
 	{
@@ -38,31 +37,35 @@ int main(void) {
 
 	   //error checking
 	   if(rcvid == -1)
-		   break;
+		   perror("MsgReceive");
+	   	   exit(EXIT_FAILURE);
 
 	  //pulse
 	   if(rcvid == 0){
 		   switch (msg.pulse.code) {
+		   	   case 1:
+			   // pulse code 1: plane about to land
 
-		   // client is gone/disconnected
+		   	   case 2:
+			   // pulse code 2: plane request for gate assignment
+
+		   	   // client is gone/disconnected
 		   	   case _PULSE_CODE_DISCONNECT:
-		                 printf("client is disconected \n");
+		                 printf("client is disconnected \n");
 		                  ConnectDetach(msg.pulse.scoid);
 		                  break;
-
-		  //something else
 		   	   default:
-		   		   printf("Some other pulse -> code: %d ... val: %d\n",msg.pulse.code,msg.pulse.value.sival_int);
-
-
+		   		   printf("Cannot resolve pulse -> code: %d ... val: %d\n",msg.pulse.code,msg.pulse.value.sival_int);
 		   }
 
 	   }
 
-	  //message
+	  //receive a message
 	   else{
 		   //print received message
-	       printf("server received plane: id:%d \n", msg.plane.id);
+	       printf("server received a message from airplane id:%d \n", msg.plane.id);
+
+	       //switch case on pulse code
 
 	       //carrying out data integrity verification using checksum
 	       int checksum = calculate_checksum(&msg.plane);
@@ -73,21 +76,4 @@ int main(void) {
    //remove the name from the namespace and destroy the channel
    name_detach(attach,0);
    return 0;
-}
-
-
-
-
-int calculate_checksum(airplane *plane)
-{
-
-	unsigned int sum = 0;
-
-	unsigned char *p = (unsigned char *)plane;
-	for (int i=0; i<sizeof(plane); i++) {
-	    sum += p[i];
-	}
-
-
-	return sum;
 }

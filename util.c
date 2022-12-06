@@ -1,0 +1,168 @@
+/**
+ * util.c
+ *
+ * Provide linked list data type.
+ *
+ */
+
+
+//linked list memory deallocation
+void cleanup(NodeType *listHead)
+{
+  NodeType *currNode;
+  NodeType *nextNode;
+  currNode = listHead;
+  while (currNode != NULL) {
+    nextNode = currNode->next;
+    free(currNode->data);
+    free(currNode);
+    currNode = nextNode;
+  }
+}
+
+void addPlaneToTail(NodeType **listHead, airplane *plane)
+{
+	NodeType *currNode;
+	NodeType *prevNode;
+	NodeType *newNode;
+
+	newNode = malloc(sizeof(NodeType));
+	newNode->data = plane;
+	newNode->next = NULL;
+
+	if (*listHead == NULL){
+		*listHead = newNode;
+	} else {
+		NodeType *lastNode = *listHead;
+		while (lastNode->next != NULL){
+			lastNode = lastNode->next;
+		}
+		lastNode->next = newNode;
+	}
+}
+
+void addPlane(NodeType **listHead, airplane *plane, int pos)
+{
+  NodeType *currNode;
+  NodeType *prevNode;
+  NodeType *newNode;
+  int currPos = 0;
+
+  currNode = *listHead;
+  prevNode = NULL;
+
+  while (currNode != NULL) {
+    if (currPos == pos)
+      break;
+    ++currPos;
+    prevNode = currNode;
+    currNode = currNode->next;
+  }
+
+  if (currPos != pos) {
+    printf("Error:  invalid position\n");
+    free(plane);
+    return;
+  }
+
+  newNode = malloc(sizeof(NodeType));
+  newNode->data = plane;
+  newNode->prev = NULL;
+  newNode->next = NULL;
+
+  if (prevNode == NULL)
+    *listHead = newNode;
+  else
+    prevNode->next = newNode;
+
+  newNode->next = currNode;
+
+  newNode->prev = prevNode;
+
+  if (currNode != NULL)
+    currNode->prev = newNode;
+}
+
+int deletePlane(NodeType **listHead, int id)
+{
+  NodeType *currNode;
+  NodeType *prevNode;
+
+  currNode = *listHead;
+  prevNode = NULL;
+
+  while (currNode != NULL) {
+    if (currNode->data->id == id)
+      break;
+
+    prevNode = currNode;
+    currNode = currNode->next;
+  }
+
+  if (currNode == NULL) {
+    return C_NOK;
+  }
+
+  if (prevNode == NULL)
+    *listHead = currNode->next;
+  else
+    prevNode->next = currNode->next;
+
+  if (currNode->next != NULL)
+    currNode->next->prev = prevNode;
+
+  free(currNode->data);
+  free(currNode);
+
+  return C_OK;
+
+}
+
+
+void sortList(NodeType **listhead)
+{
+	// sort linked list by arrival time
+	NodeType *currNode = *head;
+	NodeType *nextNode;
+	airplane *tmp;
+
+	while (currNode && currNode->next)
+	{
+		nextNode = currNode->Next;
+		while(nextNode)
+		{
+			if(currNode->data->arrivalTime > nextNode->data->arrivalTime)
+			{
+				std::swap(nextNode->data, currNode->data);
+				// tmp = currNode->data;
+				// currNode->data = nextNode->data;
+				// nextNode->data = tmp;
+			}
+			nextNode = nextNode->next;
+		}
+		currNode = currNode->next;
+	}
+}
+
+void printList(NodeType *listHead)
+{
+  NodeType *currNode = listHead;
+  while (currNode != NULL) {
+    printPlane(currNode->data);
+    currNode = currNode->next;
+  }
+}
+
+void deleteList(NodeType *head)
+{
+	NodeType *curr = head;
+	NodeType *tmp;
+	while(curr != NULL){
+		tmp = curr->next;
+		free(curr);
+		curr = tmp;
+	}
+	free(curr);
+}
+
+
