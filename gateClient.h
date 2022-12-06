@@ -1,5 +1,11 @@
-#ifndef _GATEMANAGER_H_
-#include "header.h"
+#ifndef _GATECLIENT_H_
+#define _GATECLIENT_H_
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/neutrino.h>
+#include <sys/netmgr.h>
 
 #define TOTAL_GATES 5
 #define MAX_GATE_QUEUE 2
@@ -13,13 +19,6 @@ typedef struct
 	int arrivalTime;
 	NodeType *planeList;
 } gate;
-
-// just send 2 int, no pluse
-typedef struct
-{
-	unit16_t msg_type;
-	int gateNo;
-} assign_gate_msg;
 
 
 void initGate(gate ** newGate, int id);

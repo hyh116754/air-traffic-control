@@ -10,10 +10,13 @@
 #include <sys/neutrino.h>
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
+#include <sys/iomsg.h>
 
 #include "controlTowerServer.h"
 #include "airplaneClient.h"
-#include "gateManager.h"
+#include "gateClient.h"
+#include "util.h"
+$include "msg_struct.h"
 
 
 #define MAX_STRING_LEN    256

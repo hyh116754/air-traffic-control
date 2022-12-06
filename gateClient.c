@@ -1,5 +1,5 @@
 /**
- * gateManager.c
+ * gateClient.c
  *
  * Manage gate info.
  * Act as a client to receive and response server requests.
@@ -7,11 +7,17 @@
  * This client will send message of the gate number to assign to server.
  *
  */
-#include "gateManager.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/neutrino.h>
+#include <process.h>
+#include <sys/dispatch.h>
+
+#include "gateClient.h"
 #include "controlTowerServer.h"
 
 int main() {
-
 
 	int coid, incoming_msg, status;
 	assign_gate_msg msg;

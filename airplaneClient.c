@@ -1,5 +1,5 @@
 /*
- * controlTower.cpp
+ * controlTower.c
  *
  *  Created on: Nov. 8, 2022
  *      Author: michael
@@ -17,6 +17,7 @@
 #include <sys/dispatch.h>
 
 #include "util.h"
+#include "msg_struct.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -173,9 +174,15 @@ void *planeAssignment(void *arg)
 				printf("Found the plane to land...\n");
 
 	    		ret = deletePlane(&planeList,currNode->data->id);
-			   //send the plane to the server
-				res = MsgSend(server_coid, currNode->data, sizeof(currNode->data), &checksum, sizeof(checksum));
-				printf("Received checksum %d \n",checksum);
+
+	    		//send msg type: airplane_msg
+	    		//receive msg type: gate_client_msg
+	    		int GateNo;
+
+				res = MsgSend(server_coid, currNode->data, sizeof(currNode->data), &gateNo, sizeof(gateNo));
+				printf("Received gate number is %d \n",gateNo);
+
+				// TODO: update the plane with the gate number
 
 				if(ret < 0)
 					printf("error deleting plane..\n");

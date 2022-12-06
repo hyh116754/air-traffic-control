@@ -16,7 +16,7 @@ TARGET = -Vgcc_ntox86_64
 
 CFLAGS += $(DEBUG) $(TARGET) -Wall
 LDFLAGS+= $(DEBUG) $(TARGET)
-BINS = controlTower server
+BINS = airplaneClient controlTowerServer gateClient
 all: $(BINS)
 
 clean:
@@ -24,5 +24,7 @@ clean:
 #	cd solutions; make clean
 
 
-controlTower.o: controlTower.c controlTower.h
-server.o: server.c server.h
+airplaneClinet.o: airplaneClient.c airplaneClient.h util.h msg_struct.h
+controlTowerServer.o: controlTowerServer.c controlTowerServer.h util.h msg_struct.h
+gateClient.o: gateClient.c gateClient.h util.h msg_struct.h
+

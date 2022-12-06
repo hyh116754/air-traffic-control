@@ -1,15 +1,14 @@
 #ifndef _AIRPLANECLIENT_H_
 #define _AIRPLANECLIENT_H_
 
+#include <time.h>
 
 #define NUMPLANES      10
 #define MAXX      8
 #define C_OK      0
 #define C_NOK    -1
 
-
-
-typedef struct {
+typedef union {
 	int id;
 	int x;
 	int y;
@@ -17,7 +16,7 @@ typedef struct {
 	int landed;
 	//added
 	coordinate* position;
-	arrival* arrivalInfo;
+	arrivalInfo* arrival;
 } airplane;
 
 typedef struct {
@@ -25,13 +24,10 @@ typedef struct {
 	int y;
 } coordinate;
 
-
-typedef struct arrival
-{
-	int flightCode;
-	int arrivalTime;
+typedef struct {
+	time_t arrival_time
 	int assignedGate;
-};
+} arrivalInfo;
 
 
 airplane airplanes[10];
