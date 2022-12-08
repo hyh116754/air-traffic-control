@@ -5,7 +5,7 @@
  *      Author: michael
  */
 
-#include "controlTower.h"
+
 #include <stdio.h>
 #include <unistd.h>
 #include <sys/neutrino.h>
@@ -16,8 +16,11 @@
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
 
-#include "util.h"
+#include "airplaneClient.h"
 #include "msg_struct.h"
+#include "controlTowerServer.h"
+#include "util.c"
+
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t cond = PTHREAD_COND_INITIALIZER;
@@ -28,7 +31,6 @@ int checksum;
 
 //main declares some threads and assigns them some function for the plane to fly in.
 int main(int argc, char *argv[]) {
-
 
 	//establish a connection to the server's channel
 	if ((server_coid = name_open("controlSystem", 0)) == -1) {
@@ -151,6 +153,10 @@ void *planeCollisionCheck(void *arg)
  */
 void *planeAssignment(void *arg)
 {
+
+	airplane_msg outgoing_msg;
+	gate_client_msg incoming_msg;
+
 	while(1){
 		pthread_mutex_lock(&mutex);
 		while (planeAboutToLand != 1)
@@ -165,7 +171,6 @@ void *planeAssignment(void *arg)
 		//TODO: after we add it to a gate list
 
 		int ret;
-		int res;
 		NodeType *currNode;
 	    currNode = planeList;
 	    while(currNode != NULL){
@@ -177,12 +182,15 @@ void *planeAssignment(void *arg)
 
 	    		//send msg type: airplane_msg
 	    		//receive msg type: gate_client_msg
-	    		int GateNo;
+	    		outgoing_msg.msg_type = AIRPLANE_MSG_TYPE;
+	    		outgoing_msg.plane = currNode->data;
 
-				res = MsgSend(server_coid, currNode->data, sizeof(currNode->data), &gateNo, sizeof(gateNo));
-				printf("Received gate number is %d \n",gateNo);
+				MsgSend(server_coid, &outgoing_msg, sizeof(outgoing_msg),
+							&incoming_msg, sizeof(incoming_msg));
+				printf("Received gate number is %d \n",incoming_msg.gateNo);
 
 				// TODO: update the plane with the gate number
+				currNode->data->assignedGate = incoming_msg.gateNo;
 
 				if(ret < 0)
 					printf("error deleting plane..\n");

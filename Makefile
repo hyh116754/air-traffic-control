@@ -23,8 +23,8 @@ clean:
 	rm -f *.o $(BINS);
 #	cd solutions; make clean
 
-
-airplaneClinet.o: airplaneClient.c airplaneClient.h util.h msg_struct.h
-controlTowerServer.o: controlTowerServer.c controlTowerServer.h util.h msg_struct.h
-gateClient.o: gateClient.c gateClient.h util.h msg_struct.h
+util.o: util.c util.h
+airplaneClinet.o: airplaneClient.c airplaneClient.h util.c util.h msg_struct.h
+controlTowerServer.o: controlTowerServer.c controlTowerServer.h util.c util.h msg_struct.h
+gateClient.o: gateClient.c gateClient.h util.c util.h msg_struct.h
 

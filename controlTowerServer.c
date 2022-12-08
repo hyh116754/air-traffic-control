@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
 #include <sys/neutrino.h>
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
@@ -16,7 +17,7 @@
 #include "airplaneClient.h"
 #include "gateClient.h"
 #include "util.h"
-$include "msg_struct.h"
+#include "msg_struct.h"
 
 
 #define MAX_STRING_LEN    256
@@ -25,7 +26,7 @@ $include "msg_struct.h"
 int main(void) {
 
 	name_attach_t *attach;
-	myMessage_t msg;
+	my_msg_t msg;
     int rcvid, status, checksum;
 
 	//creating a channel
@@ -35,45 +36,46 @@ int main(void) {
 
 	while(1)
 	{
-	  //code to receive msg or pulse from client
-	   rcvid = MsgReceive(attach->chid, &msg, sizeof(msg), NULL);
+		printf("Control Tower is Waiting for a message...\n");
+		//code to receive msg or pulse from client
+		rcvid = MsgReceive(attach->chid, &msg, sizeof(msg), NULL);
 
-	   //error checking
-	   if(rcvid == -1)
-		   perror("MsgReceive");
-	   	   exit(EXIT_FAILURE);
-
-	  //pulse
-	   if(rcvid == 0){
+		//error checking
+		if(rcvid == -1) {
+			perror("MsgReceive");
+			exit(EXIT_FAILURE);
+		}
+		//pulse
+		if(rcvid == 0){
 		   switch (msg.pulse.code) {
-		   	   case 1:
+			   case 1:
 			   // pulse code 1: plane about to land
 
-		   	   case 2:
-			   // pulse code 2: plane request for gate assignment
-
-		   	   // client is gone/disconnected
-		   	   case _PULSE_CODE_DISCONNECT:
-		                 printf("client is disconnected \n");
-		                  ConnectDetach(msg.pulse.scoid);
-		                  break;
-		   	   default:
-		   		   printf("Cannot resolve pulse -> code: %d ... val: %d\n",msg.pulse.code,msg.pulse.value.sival_int);
+			   case _PULSE_CODE_DISCONNECT:
+						 printf("client is disconnected \n");
+						  ConnectDetach(msg.pulse.scoid);
+						  break;
+			   default:
+				   printf("Cannot resolve pulse -> code: %d ... val: %d\n",msg.pulse.code,msg.pulse.value.sival_int);
 		   }
-
-	   }
+		}
 
 	  //receive a message
-	   else{
+	   else if (rcvid > 0){
 		   //print received message
-	       printf("server received a message from airplane id:%d \n", msg.plane.id);
+	       printf("server received a message.");
 
-	       //switch case on pulse code
+		   switch (msg.type) {
+		   case AIRPLANE_MSG_TYPE:
+			   printf("Received a airplane message.\n");
 
-	       //carrying out data integrity verification using checksum
-	       int checksum = calculate_checksum(&msg.plane);
-	       int res = MsgReply(rcvid,0,&checksum,sizeof(checksum));
-	       printf("Msgreply val: %d\n",res);
+			   break;
+		   case GATE_MSG_TYPE:
+			   printf("Received a gate message.\n");
+		       int res = MsgReply(rcvid,0,&checksum,sizeof(checksum));
+		       printf("Msgreply val: %d\n",res);
+			   break;
+		   }
 	   }
 	}
    //remove the name from the namespace and destroy the channel

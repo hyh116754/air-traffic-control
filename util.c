@@ -4,6 +4,7 @@
  * Provide linked list data type.
  *
  */
+#include "util.h"
 
 
 //linked list memory deallocation
@@ -119,24 +120,23 @@ int deletePlane(NodeType **listHead, int id)
 }
 
 
-void sortList(NodeType **listhead)
+void sortList(NodeType **listHead)
 {
 	// sort linked list by arrival time
-	NodeType *currNode = *head;
+	NodeType *currNode = *listHead;
 	NodeType *nextNode;
 	airplane *tmp;
 
 	while (currNode && currNode->next)
 	{
-		nextNode = currNode->Next;
+		nextNode = currNode->next;
 		while(nextNode)
 		{
 			if(currNode->data->arrivalTime > nextNode->data->arrivalTime)
 			{
-				std::swap(nextNode->data, currNode->data);
-				// tmp = currNode->data;
-				// currNode->data = nextNode->data;
-				// nextNode->data = tmp;
+				tmp = currNode->data;
+				currNode->data = nextNode->data;
+				nextNode->data = tmp;
 			}
 			nextNode = nextNode->next;
 		}
@@ -148,7 +148,7 @@ void printList(NodeType *listHead)
 {
   NodeType *currNode = listHead;
   while (currNode != NULL) {
-    printPlane(currNode->data);
+    printf(currNode->data->id);
     currNode = currNode->next;
   }
 }
@@ -164,5 +164,6 @@ void deleteList(NodeType *head)
 	}
 	free(curr);
 }
+
 
 
