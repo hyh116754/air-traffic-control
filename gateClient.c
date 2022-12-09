@@ -17,6 +17,10 @@
 #include <math.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 #include "msg_struct.h"
 #include "util.c"
@@ -24,14 +28,12 @@
 #include "airplaneClient.h"
 #include "controlTowerServer.h"
 
-
-pthread_mutex_t gate_update_mutex;
-int coid;
+shmem_t *ptr;
 
 int main() {
 
-	int chid, rcvid, status;
-	airplane *plane;
+	int coid, fd, status, ret;
+	pthread_t thread0;
 
 	// connect to server channel
 	coid = name_open(ATTACH_POINT,0);
@@ -40,59 +42,111 @@ int main() {
 		exit(EXIT_FAILURE);
 	}
 
-	// initialize a list of gates
-	for(int i = 0; i< TOTAL_GATES; ++i){
-		setGate(&(gates[i]), i, NULL, NULL);
-	}
-
-	// initialize the gate update mutex
-	pthread_mutex_init(&gate_update_mutex, NULL);
-
-	// send gate info to server
-	// create a thread with very high priority here
-	if (MsgSend(coid, &msg, sizeof(msg), NULL, 0) == -1)
+	// create shared memory for gate list
+	fd = shm_open(SHMEM_NAME, O_RDWR | O_CREAT, 0666);
+	if (fd == -1)
 	{
-		perror("MsgSend");
+		perror("shm_open()");
 		exit(EXIT_FAILURE);
 	}
 
+	//set the size of the shared memory object
+	ret = ftruncate(fd, sizeof(shmem_t));
+	if (-1 == ret)
+	{
+		perror("ftruncate");
+		exit(EXIT_FAILURE);
+	}
+
+	// get a pointer to a piece of the shared memory
+	ptr = mmap(0, sizeof(shmem_t), PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	if (MAP_FAILED == ptr)
+	{
+		perror("mmap");
+		exit(EXIT_FAILURE);
+	}
+	close(fd);
+
+	/*
+	 * initialize the semaphore
+	 * The 1 means it can be shared between processes.  The 0 is the
+	 * count, 0 meaning sem_wait() calls will block until a sem_post()
+	 * is done.
+	 */
+	if (-1 == sem_init(&ptr->semaphore, 1, 0))
+	{
+		perror("sem_init");
+		munmap(ptr, sizeof(shmem_t));
+		shm_unlink(SHMEM_NAME);
+		exit(EXIT_FAILURE);
+	}
+
+	// initialize a list of gates
+	gates = malloc(TOTAL_GATES * sizeof(gate));
+
+	for(int i = 0; i< TOTAL_GATES; ++i){
+		gates[i].gateId = i + 1;
+		gates[i].flightId = 0;
+		printGate(&(gates[i]));
+	}
+	printf("gate client initialized %d gates.\n ", TOTAL_GATES);
+
+	// copy to shared memory
+	ptr->total_gates = TOTAL_GATES;
+
+	for(int i = 0; i< TOTAL_GATES; ++i){
+		ptr->gates[i] = gates[i];
+		printGate(&(ptr->gates[i]));
+	}
+
+	// send a pulse to server
+	status = MsgSendPulse(coid,-1,SHMEM_READY_PULSE,10);
+	printf("MsgSendPulse return status: %d\n", status);
+
+	sleep(10);
+
+	printf("Woke up.  Now posting to the semaphore.\n");
+	if (-1 == sem_post(&ptr->semaphore))
+	{
+		perror("sem_post");
+	}
+
 	// create the client notification thread
-	pthread_create(NULL, NULL, update_thread, NULL);
+	pthread_create(&thread0, NULL, update_thread, NULL);
+
+	sleep(300);
+
+	// close everything
+	if (-1 == munmap(ptr, sizeof(shmem_t)))
+	{
+		perror("munmap");
+	}
+	if (-1 == shm_unlink(SHMEM_NAME))
+	{
+		perror("shm_unlink");
+	}
+	// wait for the update thread
+	void *res;
+	pthread_join(thread0,&res);
 
 	return EXIT_SUCCESS;
 }
 
-void setGate(gate *newGate, int gateId, int flightId, time_t time)
-{
-  newGate->gateId = gateId;
-  newGate->flightId = flightId;
-  newGate->arrivalTime = time;
-}
-
-void printGates(gate** gateList) {
-
-	for(int i=0; i<TOTAL_GATES; i++){
-		printf("gate id: %d\n, flight id: %d\n, arrival time: %s\n",
-					gateList[i]->gateId,
-					gateList[i]->flightId,
-					gateList[i]->arrivalTime);
-	}
+void printGate(gate* gate) {
+	printf("gate id: %d\n, flight id: %d\n",
+				gate->gateId,
+				gate->flightId);
 }
 
 void *update_thread(void * ignore) {
-	int errornum;
-	my_msg_t *msg;
 	while (1) {
-		sleep(1);
-		pthread_mutex_lock(&gate_update_mutex);
-		printf("request gate update from server\n");
-		msg->type = GATE_UPDATE_MSG;
-		gate received_gates[TOTAL_GATES];
-		MsgSend(coid, &msg, sizeof(msg), &received_gates, sizeof(received_gates));
-		printf("server returns a list of gates. update gates now.\n");
-		memcpy(gates, received_gates, sizeof(gates));
-
-		pthread_mutex_unlock(&gate_update_mutex);
+		sem_wait(&ptr->semaphore);
+		printf("new thread for printing gates every 5 sec.\n");
+		for(int i = 0; i< TOTAL_GATES; ++i){
+			printGate(&(ptr->gates[i]));
+		}
+		sem_post(&ptr->semaphore);
+		sleep(60);
 
 	}
 	return NULL;

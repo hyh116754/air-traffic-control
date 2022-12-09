@@ -48,8 +48,9 @@ int main(int argc, char *argv[]) {
 	//creating linked list of airplane objects
 	int i;
 	for(i = 0; i< NUMPLANES; ++i){
-		initPlane(i,0,(rand() % 10)+2,(rand() % 5)+1,0,&newAirplane);
+		initPlane(i+1,0,(rand() % 10)+2,(rand() % 5)+1,0,&newAirplane);
 		addPlane(&planeList,newAirplane,i);
+		printPlane(newAirplane);
 	}
 	printList(planeList);
 	planeAboutToLand = 0;
@@ -138,10 +139,6 @@ void *planeUpdate(void *arg)
 }
 
 
-/**
- * this function will send a pulse to server asking for check
- * if find collision, will update server
- */
 void *planeCollisionCheck(void *arg)
 {
 	//TODO: ensure plane collision doesn't happen through speed changes
@@ -181,14 +178,13 @@ void *planeAssignment(void *arg)
 
 	    		ret = deletePlane(&planeList,currNode->data->id);
 
-	    		outgoing_msg.msg_type = AIRPLANE_MSG_TYPE;
-	    		outgoing_msg.plane = currNode->data;
+	    		outgoing_msg.msg_type = AIRPLANE_GATE_REQUEST;
+	    		outgoing_msg.planeId = currNode->data->id;
 
 				MsgSend(server_coid, &outgoing_msg, sizeof(outgoing_msg),
 							&gateNo, sizeof(gateNo));
 				printf("Received gate number is %d \n",gateNo);
 
-				// TODO: update the plane with the gate number
 				currNode->data->assignedGate = gateNo;
 
 				if(ret < 0)
@@ -201,8 +197,6 @@ void *planeAssignment(void *arg)
 	    	currNode = currNode->next;
 	    }
 	    printList(planeList);
-
-
 
 		planeAboutToLand = 0;
 		pthread_cond_broadcast(&cond);
