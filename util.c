@@ -23,8 +23,7 @@ void cleanup(NodeType *listHead)
 
 void addPlaneToTail(NodeType **listHead, airplane *plane)
 {
-	NodeType *currNode;
-	NodeType *prevNode;
+	NodeType *lastNode;
 	NodeType *newNode;
 
 	newNode = malloc(sizeof(NodeType));
@@ -34,7 +33,7 @@ void addPlaneToTail(NodeType **listHead, airplane *plane)
 	if (*listHead == NULL){
 		*listHead = newNode;
 	} else {
-		NodeType *lastNode = *listHead;
+		lastNode = *listHead;
 		while (lastNode->next != NULL){
 			lastNode = lastNode->next;
 		}
@@ -148,7 +147,7 @@ void printList(NodeType *listHead)
 {
   NodeType *currNode = listHead;
   while (currNode != NULL) {
-    printf(currNode->data->id);
+    printf("%d\n", currNode->data->id);
     currNode = currNode->next;
   }
 }

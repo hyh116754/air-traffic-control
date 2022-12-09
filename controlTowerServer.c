@@ -19,20 +19,20 @@
 #include "util.h"
 #include "msg_struct.h"
 
-
-#define MAX_STRING_LEN    256
-
-
 int main(void) {
 
 	name_attach_t *attach;
 	my_msg_t msg;
-    int rcvid, status, checksum;
+	int rcvid, status, total_gates;
+
+	// server maintain a list of gates
+	gate *gateList;
 
 	//creating a channel
-   if ((attach = name_attach(NULL, ATTACH_POINT, 0)) == NULL) {
+	if ((attach = name_attach(NULL, ATTACH_POINT, 0)) == NULL) {
 	   return EXIT_FAILURE;
-   }
+	}
+	printf("Control Tower Server Channel created.\n");
 
 	while(1)
 	{
@@ -45,36 +45,66 @@ int main(void) {
 			perror("MsgReceive");
 			exit(EXIT_FAILURE);
 		}
-		//pulse
+		// we are not expecting a pulse
 		if(rcvid == 0){
 		   switch (msg.pulse.code) {
-			   case 1:
-			   // pulse code 1: plane about to land
-
 			   case _PULSE_CODE_DISCONNECT:
-						 printf("client is disconnected \n");
-						  ConnectDetach(msg.pulse.scoid);
-						  break;
+					printf("disconnect from a client\n");
+					break;
 			   default:
 				   printf("Cannot resolve pulse -> code: %d ... val: %d\n",msg.pulse.code,msg.pulse.value.sival_int);
 		   }
 		}
-
 	  //receive a message
 	   else if (rcvid > 0){
 		   //print received message
-	       printf("server received a message.");
-
 		   switch (msg.type) {
-		   case AIRPLANE_MSG_TYPE:
-			   printf("Received a airplane message.\n");
+			case _IO_CONNECT:
+				printf("got an _IO_CONNECT.\n");
+				if (-1 == MsgReply(rcvid, EOK, NULL, 0)) {
+					perror("MsgReply");
+					break;
+				}
+				break;
 
+			case GATE_LIST_MSG:
+				// receive a list of gates from gate client.
+				gateList = malloc(total_gates * sizeof (gate));
+				memcpy(gateList, src, sizeof(gateList));
+				status = MsgReply(rcvid, EOK, NULL, 0);
+				if (-1 == status) {
+					perror("MsgReply");
+					exit(EXIT_FAILURE);
+				}
+				printf("memcpy finished.\n");
+				break;
+			case GATE_UPDATE_MSG:
+				// receive gate update request, will send gatelist
+				printf("received gate update request. sending update.\n");
+				status = MsgReply(rcvid, EOK, &gateList, sizeof(gateList));
+				if (-1 == status) {
+					perror("MsgReply");
+					exit(EXIT_FAILURE);
+				}
+				break;
+			case AIRPLANE_MSG_TYPE:
+				// receives airplane info, will reply with a gate number
+				printf("Received a airplane message.\n");
+				int res = getGateToAssign(gateList, msg.plane, total_gates);
+				status = MsgReply(rcvid, EOK, &res, sizeof(res));
+				if (-1 == status) {
+					perror("MsgReply");
+					exit(EXIT_FAILURE);
+				}
+				break;
 			   break;
-		   case GATE_MSG_TYPE:
-			   printf("Received a gate message.\n");
-		       int res = MsgReply(rcvid,0,&checksum,sizeof(checksum));
-		       printf("Msgreply val: %d\n",res);
-			   break;
+		   default:
+				/* some other unexpected message */
+				printf("unexpected message type: %d\n", msg.type);
+				if (-1 == MsgError(rcvid, ENOSYS)) {
+					perror("MsgError");
+				}
+				break;
 		   }
 	   }
 	}
@@ -82,3 +112,18 @@ int main(void) {
    name_detach(attach,0);
    return 0;
 }
+
+int getGateToAssign(gate* gateList, airplane* newPlane, int total_gates) {
+	// for each gate check if it's empty
+	for(int i=0; i<total_gates; i++)
+	{
+		if(gateList[i].flightId == NULL) {
+			gateList[i].flightId = newPlane->id;
+			gateList[i].arrivalTime = newPlane->arrivalTime;
+			return i;
+		}
+	}
+	printf("cannot find a gate to match!");
+	return -1;
+}
+

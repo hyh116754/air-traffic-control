@@ -1,6 +1,7 @@
 #ifndef _GATECLIENT_H_
 #define _GATECLIENT_H_
 
+#include <time.h>
 #include "util.h"
 
 #define TOTAL_GATES 5
@@ -11,19 +12,19 @@
 typedef struct
 {
 	int gateId;
-	int arrivalTime;
-	NodeType *planeList;
+	int flightId;
+	time_t arrivalTime;
 } gate;
 
+
+// an array of gate objects
 gate gates[TOTAL_GATES];
 
 
-void initGate(gate *newGate, int id);
-void displayGateInfo(gate*);
-int getGateToAssign(airplane* newPlane);
-int checkTimeCollision(NodeType *head, airplane *plane);
-void addPlaneToGate(int gateId, airplane** plane);
-void clearGate(int gateId);
+void setGate(gate *newGate, int gateId, int flightId, time_t time);
+void printGates(gate** gateList);
+// this thread will notify every second any client that needs notification
+void * update_thread(void * ignore);
 
 
 #endif

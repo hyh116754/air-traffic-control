@@ -9,11 +9,12 @@
 
 #include <sys/iomsg.h>
 #include "util.h"
+#include "gateClient.h"
 
 #define AIRPLANE_MSG_TYPE (_IO_MAX + 1)
-#define GATE_MSG_TYPE (_IO_MAX + 2)
-#define PULL_PULSE_TYPE (_IO_MAX + 3)
-#define REQUEST_MSG_TYPE (_IO_MAX + 4)
+#define AIRPLANE_REQUEST_GATE (_IO_MAX + 2)
+#define GATE_UPDATE_MSG (_IO_MAX + 3)
+#define GATE_LIST_MSG (_IO_MAX + 4)
 
 
 typedef struct
@@ -22,18 +23,11 @@ typedef struct
 	airplane *plane;
 } airplane_msg;
 
-
 typedef struct
 {
 	uint16_t msg_type;
-	int gateNo;
-} gate_client_msg;
-
-typedef struct
-{
-	uint16_t msg_type;
-	int ret;
-}gate_request_msg;
+	gate* gateList;
+}gate_list_msg;
 
 // all possible types of messages that can be received
 typedef union
@@ -41,8 +35,7 @@ typedef union
 	uint16_t type;
 	struct _pulse pulse;
 	airplane_msg plane_msg;
-	gate_client_msg gate_msg;
-	gate_request_msg request_msg;
+	gate_list_msg gate_list_msg;
 } my_msg_t;
 
 

@@ -1,5 +1,5 @@
 /*
- * controlTower.c
+ * airplaneClient.c
  *
  *  Created on: Nov. 8, 2022
  *      Author: michael
@@ -104,8 +104,9 @@ void printPlane(const airplane *plane)
   printf("Plane:  id%d, x: %d y:%d speed:%d\n",plane->id,plane->x,plane->y,plane->speed);
 }
 
+
 /**
- * this function will send updated plane info to server as msg
+ * Update the plane positions.
  */
 void *planeUpdate(void *arg)
 {
@@ -149,13 +150,13 @@ void *planeCollisionCheck(void *arg)
 
 
 /**
- * this function will send plane info to server as msg
+ * Send plane to land to server, server will reply with a gate number
  */
 void *planeAssignment(void *arg)
 {
 
 	airplane_msg outgoing_msg;
-	gate_client_msg incoming_msg;
+	int gateNo;
 
 	while(1){
 		pthread_mutex_lock(&mutex);
@@ -180,17 +181,15 @@ void *planeAssignment(void *arg)
 
 	    		ret = deletePlane(&planeList,currNode->data->id);
 
-	    		//send msg type: airplane_msg
-	    		//receive msg type: gate_client_msg
 	    		outgoing_msg.msg_type = AIRPLANE_MSG_TYPE;
 	    		outgoing_msg.plane = currNode->data;
 
 				MsgSend(server_coid, &outgoing_msg, sizeof(outgoing_msg),
-							&incoming_msg, sizeof(incoming_msg));
-				printf("Received gate number is %d \n",incoming_msg.gateNo);
+							&gateNo, sizeof(gateNo));
+				printf("Received gate number is %d \n",gateNo);
 
 				// TODO: update the plane with the gate number
-				currNode->data->assignedGate = incoming_msg.gateNo;
+				currNode->data->assignedGate = gateNo;
 
 				if(ret < 0)
 					printf("error deleting plane..\n");
