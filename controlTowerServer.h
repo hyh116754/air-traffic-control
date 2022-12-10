@@ -14,6 +14,6 @@
 #define CKSUM_MSG_TYPE (_IO_MAX + 1)
 #define ATTACH_POINT "controlSystem"
 
-int getGateToAssign(gate* gateList, int planeId, int total_gates);
+int assignGate(gate* gateList, int planeId, int total_gates);
 
 #endif

@@ -17,7 +17,6 @@ typedef struct {
 	int y;
 	int speed;
 	int landed;
-	time_t arrivalTime;
 	int assignedGate;
 } airplane;
 

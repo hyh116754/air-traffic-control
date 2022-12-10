@@ -37,7 +37,6 @@ int main(int argc, char *argv[]) {
 			return EXIT_FAILURE;
 	}
 
-
 	srand(time(NULL));
 	pthread_t thread0;
 	pthread_t thread1;
@@ -138,7 +137,9 @@ void *planeUpdate(void *arg)
 
 }
 
-
+/**
+ *  plane collision check.
+ */
 void *planeCollisionCheck(void *arg)
 {
 	//TODO: ensure plane collision doesn't happen through speed changes
@@ -166,7 +167,6 @@ void *planeAssignment(void *arg)
 
 		//we are finding the airplane in the current "in air" list which has landed and remove it from air list
 		//we need to pass it over server communication to our gate somehow
-		//TODO: after we add it to a gate list
 
 		int ret;
 		NodeType *currNode;

@@ -20,7 +20,7 @@ gate *gates;
 
 void printGate(gate* gate);
 // this thread will notify every second any client that needs notification
-void * update_thread(void * ignore);
+void *update_thread(void * ignore);
 
 
 #endif

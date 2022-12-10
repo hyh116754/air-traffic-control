@@ -119,30 +119,6 @@ int deletePlane(NodeType **listHead, int id)
 }
 
 
-void sortList(NodeType **listHead)
-{
-	// sort linked list by arrival time
-	NodeType *currNode = *listHead;
-	NodeType *nextNode;
-	airplane *tmp;
-
-	while (currNode && currNode->next)
-	{
-		nextNode = currNode->next;
-		while(nextNode)
-		{
-			if(currNode->data->arrivalTime > nextNode->data->arrivalTime)
-			{
-				tmp = currNode->data;
-				currNode->data = nextNode->data;
-				nextNode->data = tmp;
-			}
-			nextNode = nextNode->next;
-		}
-		currNode = currNode->next;
-	}
-}
-
 void printList(NodeType *listHead)
 {
   NodeType *currNode = listHead;

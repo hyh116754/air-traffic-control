@@ -31,10 +31,6 @@ int main(void) {
 	my_msg_t msg;
 	int rcvid, status, fd;
 
-
-	// server maintain a list of gates
-	gate *gateList;
-
 	//creating a channel
 	if ((attach = name_attach(NULL, ATTACH_POINT, 0)) == NULL) {
 	   return EXIT_FAILURE;

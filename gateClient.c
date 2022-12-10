@@ -67,12 +67,7 @@ int main() {
 	}
 	close(fd);
 
-	/*
-	 * initialize the semaphore
-	 * The 1 means it can be shared between processes.  The 0 is the
-	 * count, 0 meaning sem_wait() calls will block until a sem_post()
-	 * is done.
-	 */
+	// initialize the semaphore
 	if (-1 == sem_init(&ptr->semaphore, 1, 0))
 	{
 		perror("sem_init");
@@ -132,16 +127,22 @@ int main() {
 	return EXIT_SUCCESS;
 }
 
+/**
+ * print gate metadata.
+ */
 void printGate(gate* gate) {
 	printf("gate id: %d\n, flight id: %d\n",
 				gate->gateId,
 				gate->flightId);
 }
 
+/**
+ * a thread to check shared memory gate list every 60 sec.
+ */
 void *update_thread(void * ignore) {
 	while (1) {
 		sem_wait(&ptr->semaphore);
-		printf("new thread for printing gates every 5 sec.\n");
+		printf("new thread for printing gates every 60 sec.\n");
 		for(int i = 0; i< TOTAL_GATES; ++i){
 			printGate(&(ptr->gates[i]));
 		}
